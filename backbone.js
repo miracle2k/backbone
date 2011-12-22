@@ -162,7 +162,7 @@
 
     // Get the value of an attribute.
     get : function(attr) {
-      return this.attributes[attr];
+      return this['_get_' + attr] ? this['_get_' + attr]() : this.attributes[attr];
     },
 
     // Get the HTML-escaped value of an attribute.
@@ -176,7 +176,7 @@
     // Returns `true` if the attribute contains a value that is not null
     // or undefined.
     has : function(attr) {
-      return this.attributes[attr] != null;
+      return (this['_get_' + attr] ? this['_get_' + attr]() : this.attributes[attr]) != null;
     },
 
     // Set a hash of model attributes on the object, firing `"change"` unless you
@@ -210,9 +210,10 @@
 
       // Update attributes.
       for (var attr in attrs) {
-        var val = attrs[attr];
+        var val = this['_filter_' + attr]? this['_filter_' + attr](attrs[attr]) : attrs[attr];
         if (!_.isEqual(now[attr], val) || (options.unset && (attr in now))) {
-          options.unset ? delete now[attr] : now[attr] = val;
+          options.unset ? delete now[attr] : (
+            this['_set_' + attr] ? this['_set_' + attr](val, options) : now[attr] = val);
           delete escaped[attr];
           this._changed = true;
           if (!options.silent) this.trigger('change:' + attr, this, val, options);
